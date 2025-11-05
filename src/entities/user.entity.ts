@@ -8,11 +8,14 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   DeleteDateColumn,
+  Index,
 } from 'typeorm';
 import { Permission } from './permission.entity';
 import { Article } from './article.entity';
 
 @Entity('users')
+@Index(['createdAt', 'id'])
+@Index(['permissionId'])
 export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;

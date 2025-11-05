@@ -9,8 +9,9 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  Query,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { UserCreateDto } from './dto/user-create.dto';
 import { UserUpdateDto } from './dto/user-update.dto';
@@ -18,6 +19,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../common/guards/permissions.guard';
 import { Permissions } from '../common/decorators/permissions.decorator';
 import { PermissionType } from '../common/enums/permission-type.enum';
+import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 
 @ApiTags('Users')
 @ApiBearerAuth()
@@ -38,11 +40,12 @@ export class UsersController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all users (Admin only)' })
-  @ApiResponse({ status: 200, description: 'List of users' })
+  @ApiOperation({ summary: 'Get all users with pagination (Admin only)' })
+  @ApiQuery({ name: 'cursor', required: false, type: String })
+  @ApiResponse({ status: 200, description: 'Paginated list of users' })
   @ApiResponse({ status: 403, description: 'Forbidden - Admin access required' })
-  findAll() {
-    return this.usersService.findAll();
+  findAll(@Query() paginationQuery: PaginationQueryDto) {
+    return this.usersService.findAll(paginationQuery);
   }
 
   @Get(':id')

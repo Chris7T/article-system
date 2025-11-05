@@ -7,10 +7,13 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   DeleteDateColumn,
+  Index,
 } from 'typeorm';
 import { User } from './user.entity';
 
 @Entity('articles')
+@Index(['createdAt', 'id'])
+@Index(['authorId'])
 export class Article {
   @PrimaryGeneratedColumn('uuid')
   id: string;

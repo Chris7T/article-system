@@ -9,8 +9,9 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  Query,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { ArticlesService } from './articles.service';
 import { ArticleCreateDto } from './dto/article-create.dto';
 import { ArticleUpdateDto } from './dto/article-update.dto';
@@ -20,6 +21,7 @@ import { Permissions } from '../common/decorators/permissions.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { PermissionType } from '../common/enums/permission-type.enum';
 import { User } from '../entities/user.entity';
+import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 
 @ApiTags('Articles')
 @ApiBearerAuth()
@@ -45,11 +47,12 @@ export class ArticlesController {
     PermissionType.EDITOR,
     PermissionType.ADMIN,
   )
-  @ApiOperation({ summary: 'Get all articles (Reader/Editor/Admin)' })
-  @ApiResponse({ status: 200, description: 'List of articles' })
+  @ApiOperation({ summary: 'Get all articles with pagination (Reader/Editor/Admin)' })
+  @ApiQuery({ name: 'cursor', required: false, type: String })
+  @ApiResponse({ status: 200, description: 'Paginated list of articles' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  findAll() {
-    return this.articlesService.findAll();
+  findAll(@Query() paginationQuery: PaginationQueryDto) {
+    return this.articlesService.findAll(paginationQuery);
   }
 
   @Get(':id')

@@ -137,14 +137,65 @@ describe('UsersController (e2e)', () => {
   });
 
   describe('/users (GET)', () => {
-    it('should list all users (admin only)', async () => {
+    it('should list all users with pagination (admin only)', async () => {
       const response = await request(app.getHttpServer())
         .get('/api/users')
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      expect(Array.isArray(response.body)).toBe(true);
-      expect(response.body.length).toBeGreaterThan(0);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body).toHaveProperty('meta');
+      expect(Array.isArray(response.body.data)).toBe(true);
+      expect(response.body.data.length).toBeGreaterThan(0);
+      expect(response.body.meta).toHaveProperty('hasMore');
+      expect(typeof response.body.meta.hasMore).toBe('boolean');
+      if (response.body.meta.hasMore) {
+        expect(response.body.meta).toHaveProperty('cursor');
+      }
+    });
+
+    it('should support cursor pagination', async () => {
+      for (let i = 0; i < 15; i++) {
+        await request(app.getHttpServer())
+          .post('/api/users')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .send({
+            name: `Test User ${i}`,
+            email: `testuser${i}@test.com`,
+            password: 'password123',
+            permission_id: PermissionType.READER,
+          });
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+
+      const firstPage = await request(app.getHttpServer())
+        .get('/api/users')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(firstPage.body.data.length).toBeLessThanOrEqual(10);
+      expect(firstPage.body.meta).toHaveProperty('hasMore');
+
+      if (firstPage.body.meta.hasMore) {
+        expect(firstPage.body.meta.cursor).toBeDefined();
+        const cursorId = firstPage.body.meta.cursor;
+        const lastItemFirstPage = firstPage.body.data[firstPage.body.data.length - 1];
+        
+        expect(lastItemFirstPage.id).toBe(cursorId);
+        
+        const secondPage = await request(app.getHttpServer())
+          .get(`/api/users?cursor=${cursorId}`)
+          .set('Authorization', `Bearer ${adminToken}`)
+          .expect(200);
+
+        expect(secondPage.body.data.length).toBeGreaterThan(0);
+        expect(secondPage.body.data.length).toBeLessThanOrEqual(10);
+        expect(secondPage.body.meta).toHaveProperty('hasMore');
+        expect(secondPage.body.meta).toHaveProperty('cursor');
+        
+        expect(secondPage.body.data).toBeInstanceOf(Array);
+        expect(secondPage.body.data.length).toBeGreaterThan(0);
+      }
     });
 
     it('should not allow non-admin users', async () => {

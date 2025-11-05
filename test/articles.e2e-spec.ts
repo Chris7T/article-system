@@ -143,13 +143,62 @@ describe('ArticlesController (e2e)', () => {
   });
 
   describe('/articles (GET)', () => {
-    it('should list all articles (authenticated users)', async () => {
+    it('should list all articles with pagination (authenticated users)', async () => {
       const response = await request(app.getHttpServer())
         .get('/api/articles')
         .set('Authorization', `Bearer ${readerToken}`)
         .expect(200);
 
-      expect(Array.isArray(response.body)).toBe(true);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body).toHaveProperty('meta');
+      expect(Array.isArray(response.body.data)).toBe(true);
+      expect(response.body.meta).toHaveProperty('hasMore');
+      expect(typeof response.body.meta.hasMore).toBe('boolean');
+      if (response.body.meta.hasMore) {
+        expect(response.body.meta).toHaveProperty('cursor');
+      }
+    });
+
+    it('should support cursor pagination', async () => {
+      for (let i = 0; i < 15; i++) {
+        await request(app.getHttpServer())
+          .post('/api/articles')
+          .set('Authorization', `Bearer ${editorToken}`)
+          .send({
+            title: `Test Article ${i}`,
+            content: `Content ${i}`,
+          });
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+
+      const firstPage = await request(app.getHttpServer())
+        .get('/api/articles')
+        .set('Authorization', `Bearer ${readerToken}`)
+        .expect(200);
+
+      expect(firstPage.body.data.length).toBeLessThanOrEqual(10);
+      expect(firstPage.body.meta).toHaveProperty('hasMore');
+
+      if (firstPage.body.meta.hasMore) {
+        expect(firstPage.body.meta.cursor).toBeDefined();
+        const cursorId = firstPage.body.meta.cursor;
+        const lastItemFirstPage = firstPage.body.data[firstPage.body.data.length - 1];
+        
+        expect(lastItemFirstPage.id).toBe(cursorId);
+        
+        const secondPage = await request(app.getHttpServer())
+          .get(`/api/articles?cursor=${cursorId}`)
+          .set('Authorization', `Bearer ${readerToken}`)
+          .expect(200);
+
+        expect(secondPage.body.data.length).toBeGreaterThan(0);
+        expect(secondPage.body.data.length).toBeLessThanOrEqual(10);
+        expect(secondPage.body.meta).toHaveProperty('hasMore');
+        expect(secondPage.body.meta).toHaveProperty('cursor');
+        
+        expect(secondPage.body.data).toBeInstanceOf(Array);
+        expect(secondPage.body.data.length).toBeGreaterThan(0);
+      }
     });
 
     it('should require authentication', () => {

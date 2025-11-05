@@ -14,6 +14,8 @@ import { PermissionType } from '../common/enums/permission-type.enum';
 import { UserCreateDto } from './dto/user-create.dto';
 import { UserUpdateDto } from './dto/user-update.dto';
 import { UserResponseDto } from './dto/user-response.dto';
+import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
+import { PaginationResponseDto } from '../common/dto/pagination-response.dto';
 
 @Injectable()
 export class UsersService {
@@ -74,12 +76,47 @@ export class UsersService {
     return this.formatUserResponse(userWithPermission);
   }
 
-  async findAll() {
-    const users = await this.userRepository.find({
-      relations: ['permission'],
-    });
+  async findAll(
+    paginationQuery: PaginationQueryDto,
+  ): Promise<PaginationResponseDto<UserResponseDto>> {
+    const limit = 10;
+    const queryBuilder = this.userRepository
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.permission', 'permission')
+      .orderBy('user.createdAt', 'DESC')
+      .addOrderBy('user.id', 'DESC')
+      .take(limit + 1);
 
-    return users.map((user) => this.formatUserResponse(user));
+    if (paginationQuery.cursor) {
+      const cursorUser = await this.userRepository.findOne({
+        where: { id: paginationQuery.cursor },
+        select: ['createdAt', 'id'],
+      });
+
+      if (cursorUser) {
+        queryBuilder.andWhere(
+          '(user.createdAt < :createdAt OR (user.createdAt = :createdAt AND user.id < :id))',
+          {
+            createdAt: cursorUser.createdAt,
+            id: cursorUser.id,
+          },
+        );
+      }
+    }
+
+    const users = await queryBuilder.getMany();
+    const hasMore = users.length > limit;
+    const data = hasMore ? users.slice(0, limit) : users;
+
+    const nextCursor = hasMore && data.length > 0 ? data[data.length - 1].id : undefined;
+
+    return {
+      data: data.map((user) => this.formatUserResponse(user)),
+      meta: {
+        cursor: nextCursor,
+        hasMore,
+      },
+    };
   }
 
   async findOne(id: string) {

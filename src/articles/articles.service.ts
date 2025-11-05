@@ -10,6 +10,8 @@ import { User } from '../entities/user.entity';
 import { ArticleCreateDto } from './dto/article-create.dto';
 import { ArticleUpdateDto } from './dto/article-update.dto';
 import { ArticleResponseDto } from './dto/article-response.dto';
+import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
+import { PaginationResponseDto } from '../common/dto/pagination-response.dto';
 
 @Injectable()
 export class ArticlesService {
@@ -51,13 +53,47 @@ export class ArticlesService {
     return this.formatArticleResponse(articleWithAuthor);
   }
 
-  async findAll() {
-    const articles = await this.articleRepository.find({
-      relations: ['author'],
-      order: { createdAt: 'DESC' },
-    });
+  async findAll(
+    paginationQuery: PaginationQueryDto,
+  ): Promise<PaginationResponseDto<ArticleResponseDto>> {
+    const limit = 10;
+    const queryBuilder = this.articleRepository
+      .createQueryBuilder('article')
+      .leftJoinAndSelect('article.author', 'author')
+      .orderBy('article.createdAt', 'DESC')
+      .addOrderBy('article.id', 'DESC')
+      .take(limit + 1);
 
-    return articles.map((article) => this.formatArticleResponse(article));
+    if (paginationQuery.cursor) {
+      const cursorArticle = await this.articleRepository.findOne({
+        where: { id: paginationQuery.cursor },
+        select: ['createdAt', 'id'],
+      });
+
+      if (cursorArticle) {
+        queryBuilder.andWhere(
+          '(article.createdAt < :createdAt OR (article.createdAt = :createdAt AND article.id < :id))',
+          {
+            createdAt: cursorArticle.createdAt,
+            id: cursorArticle.id,
+          },
+        );
+      }
+    }
+
+    const articles = await queryBuilder.getMany();
+    const hasMore = articles.length > limit;
+    const data = hasMore ? articles.slice(0, limit) : articles;
+
+    const nextCursor = hasMore && data.length > 0 ? data[data.length - 1].id : undefined;
+
+    return {
+      data: data.map((article) => this.formatArticleResponse(article)),
+      meta: {
+        cursor: nextCursor,
+        hasMore,
+      },
+    };
   }
 
   async findOne(id: string) {
