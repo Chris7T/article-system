@@ -7,24 +7,29 @@ import {
   IsEnum,
   IsInt,
 } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 import { PermissionType } from '../../common/enums/permission-type.enum';
 
 export class UserUpdateDto {
+  @ApiProperty({ example: 'John Doe Updated', minLength: 3, maxLength: 100, required: false })
   @IsOptional()
   @IsString({ message: 'Name must be a string' })
   @MinLength(3, { message: 'Name must have at least 3 characters' })
   @MaxLength(100, { message: 'Name must have at most 100 characters' })
   name?: string;
 
+  @ApiProperty({ example: 'newemail@example.com', required: false })
   @IsOptional()
   @IsEmail({}, { message: 'Email must be valid' })
   email?: string;
 
+  @ApiProperty({ example: 'newpassword123', minLength: 6, required: false })
   @IsOptional()
   @IsString({ message: 'Password must be a string' })
   @MinLength(6, { message: 'Password must have at least 6 characters' })
   password?: string;
 
+  @ApiProperty({ example: 2, enum: PermissionType, description: '1 = READER, 2 = EDITOR, 3 = ADMIN', required: false })
   @IsOptional()
   @IsInt({ message: 'Permission ID must be an integer' })
   @IsEnum(PermissionType, {

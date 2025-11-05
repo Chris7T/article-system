@@ -10,6 +10,7 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { ArticlesService } from './articles.service';
 import { ArticleCreateDto } from './dto/article-create.dto';
 import { ArticleUpdateDto } from './dto/article-update.dto';
@@ -20,6 +21,8 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { PermissionType } from '../common/enums/permission-type.enum';
 import { User } from '../entities/user.entity';
 
+@ApiTags('Articles')
+@ApiBearerAuth()
 @Controller('articles')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 export class ArticlesController {
@@ -28,6 +31,10 @@ export class ArticlesController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @Permissions(PermissionType.EDITOR, PermissionType.ADMIN)
+  @ApiOperation({ summary: 'Create a new article (Editor/Admin only)' })
+  @ApiResponse({ status: 201, description: 'Article successfully created' })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Editor/Admin access required' })
   create(@Body() articleCreateDto: ArticleCreateDto, @CurrentUser() user: User) {
     return this.articlesService.create(articleCreateDto, user.id);
   }
@@ -38,6 +45,9 @@ export class ArticlesController {
     PermissionType.EDITOR,
     PermissionType.ADMIN,
   )
+  @ApiOperation({ summary: 'Get all articles (Reader/Editor/Admin)' })
+  @ApiResponse({ status: 200, description: 'List of articles' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   findAll() {
     return this.articlesService.findAll();
   }
@@ -48,12 +58,22 @@ export class ArticlesController {
     PermissionType.EDITOR,
     PermissionType.ADMIN,
   )
+  @ApiOperation({ summary: 'Get article by ID (Reader/Editor/Admin)' })
+  @ApiParam({ name: 'id', type: 'string', description: 'Article UUID' })
+  @ApiResponse({ status: 200, description: 'Article found' })
+  @ApiResponse({ status: 404, description: 'Article not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   findOne(@Param('id') id: string) {
     return this.articlesService.findOne(id);
   }
 
   @Patch(':id')
   @Permissions(PermissionType.EDITOR, PermissionType.ADMIN)
+  @ApiOperation({ summary: 'Update article (Editor/Admin only)' })
+  @ApiParam({ name: 'id', type: 'string', description: 'Article UUID' })
+  @ApiResponse({ status: 200, description: 'Article successfully updated' })
+  @ApiResponse({ status: 404, description: 'Article not found' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Editor/Admin access required' })
   update(@Param('id') id: string, @Body() articleUpdateDto: ArticleUpdateDto) {
     return this.articlesService.update(id, articleUpdateDto);
   }
@@ -61,6 +81,11 @@ export class ArticlesController {
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @Permissions(PermissionType.EDITOR, PermissionType.ADMIN)
+  @ApiOperation({ summary: 'Delete article (soft delete) (Editor/Admin only)' })
+  @ApiParam({ name: 'id', type: 'string', description: 'Article UUID' })
+  @ApiResponse({ status: 204, description: 'Article successfully deleted' })
+  @ApiResponse({ status: 404, description: 'Article not found' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Editor/Admin access required' })
   async remove(@Param('id') id: string) {
     await this.articlesService.remove(id);
   }

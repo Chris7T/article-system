@@ -8,11 +8,12 @@ import { AuthService } from './auth.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { UsersModule } from '../users/users.module';
 import { User } from '../entities/user.entity';
+import { TokenBlacklist } from '../entities/token-blacklist.entity';
 
 @Module({
   imports: [
     UsersModule,
-    TypeOrmModule.forFeature([User]),
+    TypeOrmModule.forFeature([User, TokenBlacklist]),
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],

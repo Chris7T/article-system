@@ -7,6 +7,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { User } from '../entities/user.entity';
+import { TokenBlacklist } from '../entities/token-blacklist.entity';
 import { PermissionType } from '../common/enums/permission-type.enum';
 import { UserRegisterDto } from './dto/user-register.dto';
 import { UserLoginDto } from './dto/user-login.dto';
@@ -17,6 +18,8 @@ export class AuthService {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    @InjectRepository(TokenBlacklist)
+    private tokenBlacklistRepository: Repository<TokenBlacklist>,
     private jwtService: JwtService,
     private usersService: UsersService,
   ) {}
@@ -92,8 +95,24 @@ export class AuthService {
     };
   }
 
-  async logout() {
+  async logout(token: string) {
+    const existingToken = await this.tokenBlacklistRepository.findOne({
+      where: { token },
+    });
+
+    if (!existingToken) {
+      const blacklistedToken = this.tokenBlacklistRepository.create({ token });
+      await this.tokenBlacklistRepository.save(blacklistedToken);
+    }
+
     return { message: 'Logged out successfully' };
+  }
+
+  async isTokenBlacklisted(token: string): Promise<boolean> {
+    const blacklistedToken = await this.tokenBlacklistRepository.findOne({
+      where: { token },
+    });
+    return !!blacklistedToken;
   }
 }
 

@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -14,6 +15,16 @@ async function bootstrap() {
   );
 
   app.setGlobalPrefix('api');
+
+  const config = new DocumentBuilder()
+    .setTitle('Article Management System')
+    .setDescription('REST API for article management with JWT authentication and permissions')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api/docs', app, document);
 
   await app.listen(3000);
 }

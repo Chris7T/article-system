@@ -26,6 +26,32 @@ A aplicação estará disponível em `http://localhost:3000`
 
 A API estará disponível no prefixo `/api`
 
+### Documentação da API
+
+A documentação interativa da API está disponível em:
+
+```
+http://localhost:3000/api/docs
+```
+
+A documentação é gerada automaticamente pelo Swagger e inclui:
+- Descrição de todos os endpoints
+- Parâmetros de requisição
+- Exemplos de requisições e respostas
+- Teste de endpoints diretamente no navegador
+
+### Testes
+
+O projeto possui testes que cobrem todos os endpoints da API.
+
+Para executar os testes:
+
+```bash
+npm run test:e2e
+```
+
+Os testes utilizam SQLite em memória e são executados de forma isolada.
+
 ### Usuário Root
 
 Ao iniciar pela primeira vez, o sistema cria automaticamente um usuário root:
@@ -34,31 +60,6 @@ Ao iniciar pela primeira vez, o sistema cria automaticamente um usuário root:
 - **Password:** `root123`
 - **Permissão:** ADMIN
 
-## Endpoints
-
-### Autenticação
-- `POST /api/auth/register` - Registrar novo usuário
-- `POST /api/auth/login` - Login e obter token JWT
-
-### Usuários (Apenas ADMIN)
-- `GET /api/users` - Listar todos os usuários
-- `GET /api/users/:id` - Buscar usuário por ID
-- `POST /api/users` - Criar usuário
-- `PATCH /api/users/:id` - Atualizar usuário
-- `DELETE /api/users/:id` - Excluir usuário (soft delete)
-
-### Artigos
-- `GET /api/articles` - Listar todos os artigos (READER, EDITOR, ADMIN)
-- `GET /api/articles/:id` - Buscar artigo por ID (READER, EDITOR, ADMIN)
-- `POST /api/articles` - Criar artigo (EDITOR, ADMIN)
-- `PATCH /api/articles/:id` - Atualizar artigo (EDITOR, ADMIN)
-- `DELETE /api/articles/:id` - Excluir artigo (EDITOR, ADMIN)
-
-## Permissões
-
-- **ADMIN (1):** Acesso completo a usuários e artigos
-- **EDITOR (2):** Acesso completo a artigos (criar, editar, excluir)
-- **READER (1):** Apenas leitura de artigos
 
 ## Estrutura do Projeto
 
