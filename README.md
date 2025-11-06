@@ -16,7 +16,25 @@ Sistema REST API para gerenciamento de artigos com autenticação JWT e sistema 
 
 ## Como executar
 
+### Configuração Inicial
+
+Antes de executar o projeto, é necessário criar um arquivo `.env` na raiz do projeto com a variável `JWT_SECRET`:
+
+1. Crie o arquivo `.env` na raiz do projeto:
+
+```bash
+touch .env
+```
+
+2. Adicione a variável `JWT_SECRET` no arquivo `.env`:
+
+```env
+JWT_SECRET=sua-chave-secreta-aqui
+```
+
 ### Desenvolvimento
+
+Após configurar o arquivo `.env`, execute:
 
 ```bash
 docker compose up --build
